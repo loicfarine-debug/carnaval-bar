@@ -16,7 +16,7 @@
   <header>
     <img src="logo.png" alt="Carnaval Guégueleville">
     <div class="brand"><b>BAR CARNAVAL</b><small>Guégueleville</small><button id="userBtn" class="user-chip" type="button"></button></div>
-    <button id="settings" class="icon-btn" aria-label="Réglages">⚙</button>
+    <div class="header-actions"><button id="historyBtn" class="icon-btn" aria-label="Historique">🕘</button><button id="settings" class="icon-btn" aria-label="Réglages">⚙</button></div>
   </header>
 
   <nav id="tabs"></nav>
@@ -37,6 +37,7 @@
 
 <dialog id="loginDlg" class="locked-dialog">
   <div class="sheet login-sheet">
+    <button id="loginClose" class="login-close" type="button" aria-label="Fermer">×</button>
     <img src="logo.png" alt="">
     <h2>Qui tient le bar ?</h2>
     <p>Le téléphone se souviendra de toi.</p>
@@ -50,6 +51,30 @@
   <div class="sheet">
     <div class="sheet-head"><h2 id="softTitle">Quel soft ?</h2><button class="x" data-close="softDlg">×</button></div>
     <div id="softs" class="softs"></div>
+  </div>
+</dialog>
+
+<dialog id="historyDlg">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Historique récent</h2><button class="x" data-close="historyDlg">×</button></div>
+    <p class="muted">Les dernières commandes de ce téléphone.</p>
+    <div id="historyList" class="history-list"></div>
+  </div>
+</dialog>
+
+<dialog id="orderDetailDlg">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Détail de la commande</h2><button class="x" data-close="orderDetailDlg">×</button></div>
+    <div id="orderDetail"></div>
+    <button class="secondary" data-close="orderDetailDlg">Fermer</button>
+  </div>
+</dialog>
+
+<dialog id="successDlg" class="success-dialog">
+  <div class="sheet success-sheet">
+    <div class="success-check">✓</div>
+    <h2>Paiement enregistré</h2>
+    <p id="successText">Commande terminée.</p>
   </div>
 </dialog>
 
@@ -125,7 +150,15 @@
 <div id="toast"></div>
 <script>
 window.DEFAULT_PRODUCTS = [
-  {id:'minerale',name:'Minérales',price:3,cat:'softs',deposit:2,soft:false,note:'Coca · thé froid pêche · limonade · orange · grapefruit · eau · tonic · maté'},
+  {id:'coca',name:'Coca',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'the_peche',name:'Thé froid pêche',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'limonade',name:'Limonade',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'jus_orange',name:'Jus d’orange',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'grapefruit',name:'Grapefruit',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'eau_gazeuse',name:'Eau gazeuse',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'eau_plate',name:'Eau plate',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'tonic',name:'Tonic',price:3,cat:'softs',deposit:2,soft:false},
+  {id:'mate',name:'Maté',price:3,cat:'softs',deposit:2,soft:false},
   {id:'blackpig',name:'Pression Black Pig',price:4,cat:'bieres',deposit:2,soft:false,note:'Blonde de Soif'},
   {id:'blanche',name:'Pression Blanche Pierre',price:5,cat:'bieres',deposit:2,soft:false,note:'Blanche'},
   {id:'pichetbp',name:'Pichet Blonde de Soif',price:18,cat:'bieres',deposit:10,soft:false},
@@ -149,7 +182,7 @@ window.DEFAULT_PRODUCTS = [
   {id:'plateau',name:'Plateau de 10 shots',price:40,cat:'shots',deposit:30,soft:false,note:'10 verres + plateau'},
   {id:'vin',name:'Vin blanc / rosé 1 dl',price:4,cat:'vins',deposit:2,soft:false},
   {id:'bouteille',name:'Bouteille de vin blanc / rosé 5 dl',price:18,cat:'vins',deposit:0,soft:false}
-];
+]
 </script>
 <script src="app.js"></script>
 </body></html>
