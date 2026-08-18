@@ -1,7 +1,155 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#111318"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="styles.css"><title>Bar Carnaval</title></head><body><div class="app"><header><img src="logo.png"><div><b>BAR CARNAVAL</b><small>Guégueleville</small></div><button id="undo">↶</button><button id="settings">⚙</button></header><nav id="tabs"></nav><main id="grid"></main><section class="returns"><b>↩ RETOURS CONSIGNES</b><button data-ret="glass">Verre <strong>−2.–</strong></button><button data-ret="pitcher">Pichet <strong>−10.–</strong></button><button data-ret="tray">Plateau <strong>−10.–</strong></button></section><footer><button id="cart"><span id="count">0 article</span><small>Voir la commande</small></button><div><small>À ENCAISSER</small><strong id="total">0.–</strong></div><button id="pay">PAYER</button></footer></div>
-<dialog id="softDlg"><div class="sheet"><h2>Quel soft ?</h2><div id="softs" class="softs"></div><button onclick="softDlg.close()">Annuler</button></div></dialog>
-<dialog id="cartDlg"><div class="sheet"><h2>Commande / préparation</h2><div id="lines"></div><div class="bigTotal"><span>Total</span><b id="cartTotal"></b></div><button onclick="cartDlg.close()">Retour</button></div></dialog>
-<dialog id="payDlg"><div class="sheet"><h2>Paiement</h2><div class="payTotal" id="payTotal"></div><div class="paytypes"><button id="cash">💵 Cash</button><button id="twint">📱 TWINT</button></div><div id="cashBox" hidden><label>Le client donne</label><input id="given" inputmode="decimal" placeholder="50"><div id="change"></div><button id="confirmCash">Valider cash</button></div><button id="confirmTwint" hidden>Valider TWINT</button></div></dialog>
-<dialog id="pinDlg"><div class="sheet"><h2>Code comité</h2><input id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN"><button id="pinOk">Ouvrir les réglages</button><small>PIN initial : 2026</small></div></dialog>
-<dialog id="settingsDlg"><div class="sheet"><h2>Réglages & statistiques</h2><div id="stats"></div><label>Nouveau PIN comité</label><input id="newPin" inputmode="numeric"><button id="savePin">Enregistrer le PIN</button><p>Les prix et produits seront modifiables dans la prochaine itération. Les données restent sur cet appareil.</p><button onclick="settingsDlg.close()">Fermer</button></div></dialog>
-<div id="toast"></div><script>window.PRODUCTS=[{"id": "blackpig", "name": "Black Pig", "price": 4, "cat": "favoris", "deposit": 2, "soft": false}, {"id": "blanche", "name": "Blanche Pierre", "price": 5, "cat": "bieres", "deposit": 2, "soft": false}, {"id": "minerale", "name": "Minérale", "price": 3, "cat": "favoris", "deposit": 2, "soft": false}, {"id": "suze", "name": "Suze", "price": 5, "cat": "favoris", "deposit": 2, "soft": true}, {"id": "gin", "name": "Gin", "price": 7, "cat": "favoris", "deposit": 2, "soft": true}, {"id": "vodka", "name": "Vodka", "price": 7, "cat": "alcools", "deposit": 2, "soft": true}, {"id": "whisky", "name": "Whisky / Jäger", "price": 7, "cat": "alcools", "deposit": 2, "soft": true}, {"id": "martini", "name": "Martini", "price": 7, "cat": "alcools", "deposit": 2, "soft": true}, {"id": "bacardi", "name": "Rhum blanc Bacardi", "price": 7, "cat": "alcools", "deposit": 2, "soft": true}, {"id": "shot", "name": "Shot Zekilla / Berliner Luft", "price": 5, "cat": "shots", "deposit": 2, "soft": false}, {"id": "camicase", "name": "Camicase", "price": 5, "cat": "favoris", "deposit": 2, "soft": false}, {"id": "metre", "name": "Mètre de 10 shots", "price": 40, "cat": "favoris", "deposit": 30, "soft": false, "note": "10 verres + plateau"}, {"id": "pichetbp", "name": "Pichet Black Pig", "price": 18, "cat": "bieres", "deposit": 10, "soft": false}, {"id": "pichetbl", "name": "Pichet Blanche Pierre", "price": 23, "cat": "bieres", "deposit": 10, "soft": false}, {"id": "vin", "name": "Vin 1 dl", "price": 5, "cat": "vins", "deposit": 2, "soft": false}, {"id": "bouteille", "name": "Bouteille de vin", "price": 20, "cat": "vins", "deposit": 0, "soft": false}, {"id": "cafe", "name": "Café", "price": 3, "cat": "autres", "deposit": 0, "soft": false}, {"id": "sandwich", "name": "Sandwich", "price": 6, "cat": "autres", "deposit": 0, "soft": false}]</script><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>Bar Carnaval</title>
+</head>
+<body>
+<div class="app">
+  <header>
+    <img src="logo.png" alt="Carnaval Guégueleville">
+    <div class="brand"><b>BAR CARNAVAL</b><small>Guégueleville</small><button id="userBtn" class="user-chip" type="button"></button></div>
+    <button id="settings" class="icon-btn" aria-label="Réglages">⚙</button>
+  </header>
+
+  <nav id="tabs"></nav>
+  <main id="grid"></main>
+
+  <section class="returns">
+    <b>↩ RETOURS CONSIGNES</b>
+    <button data-ret="glass"><span>Verre</span><strong>−2.–</strong><em id="retGlassQty"></em></button>
+    <button data-ret="large"><span>Plateau · Arrosoir · Pichet</span><strong>−10.–</strong><em id="retLargeQty"></em></button>
+  </section>
+
+  <footer>
+    <button id="cart" class="cart-btn"><span id="count">0 article</span><small>Voir la commande</small></button>
+    <div class="footer-total"><small>À ENCAISSER</small><strong id="total">0.–</strong></div>
+    <button id="pay">PAYER</button>
+  </footer>
+</div>
+
+<dialog id="loginDlg" class="locked-dialog">
+  <div class="sheet login-sheet">
+    <img src="logo.png" alt="">
+    <h2>Qui tient le bar ?</h2>
+    <p>Le téléphone se souviendra de toi.</p>
+    <label>Prénom</label><input id="firstName" autocomplete="given-name" placeholder="Prénom">
+    <label>Nom</label><input id="lastName" autocomplete="family-name" placeholder="Nom">
+    <button id="loginOk" class="primary">Entrer dans l’app</button>
+  </div>
+</dialog>
+
+<dialog id="softDlg">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="softTitle">Quel soft ?</h2><button class="x" data-close="softDlg">×</button></div>
+    <div id="softs" class="softs"></div>
+  </div>
+</dialog>
+
+<dialog id="cartDlg">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Commande / préparation</h2><button class="x" data-close="cartDlg">×</button></div>
+    <div id="lines"></div>
+    <div class="bigTotal"><span>Total</span><b id="cartTotal"></b></div>
+    <button class="secondary" data-close="cartDlg">Fermer</button>
+  </div>
+</dialog>
+
+<dialog id="payDlg">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Paiement</h2><button class="x" data-close="payDlg">×</button></div>
+    <div class="payTotal" id="payTotal"></div>
+    <div class="paytypes"><button id="cash">💵 Cash</button><button id="twint">📱 TWINT</button></div>
+    <div id="cashBox" hidden>
+      <label>Le client donne</label>
+      <input id="given" inputmode="decimal" placeholder="50">
+      <div id="change"></div>
+      <button id="confirmCash" class="primary">Valider cash</button>
+    </div>
+    <button id="confirmTwint" class="primary" hidden>Valider TWINT</button>
+  </div>
+</dialog>
+
+<dialog id="pinDlg">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Accès comité</h2><button class="x" data-close="pinDlg">×</button></div>
+    <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="Code PIN">
+    <button id="pinOk" class="primary">Ouvrir</button>
+    <small>PIN initial : 2026</small>
+  </div>
+</dialog>
+
+<dialog id="settingsDlg">
+  <div class="sheet settings-sheet">
+    <div class="sheet-head sticky-head"><h2>Comité</h2><button class="x" data-close="settingsDlg">×</button></div>
+    <div class="settings-tabs">
+      <button class="active" data-setting-tab="stats">Statistiques</button>
+      <button data-setting-tab="prices">Prix</button>
+      <button data-setting-tab="access">Accès</button>
+    </div>
+
+    <section id="settingsStats" class="settings-panel active">
+      <div id="statsSummary" class="stats-grid"></div>
+      <h3>Ventes par heure</h3>
+      <div id="hourlyStats" class="stats-list"></div>
+      <h3>Ventes par produit</h3>
+      <div id="productStats" class="stats-list"></div>
+      <h3>Utilisateurs mémorisés sur ce téléphone</h3>
+      <div id="usersStats" class="stats-list"></div>
+      <button id="resetStats" class="danger">Réinitialiser les statistiques</button>
+    </section>
+
+    <section id="settingsPrices" class="settings-panel">
+      <p class="muted">Les changements de prix sont enregistrés sur ce téléphone.</p>
+      <div id="priceEditor"></div>
+      <button id="savePrices" class="primary">Enregistrer les prix</button>
+      <button id="resetPrices" class="secondary">Remettre les prix par défaut</button>
+    </section>
+
+    <section id="settingsAccess" class="settings-panel">
+      <label>Nouveau PIN comité</label>
+      <input id="newPin" inputmode="numeric" maxlength="8">
+      <button id="savePin" class="primary">Enregistrer le PIN</button>
+      <button id="switchUser" class="secondary">Changer d’utilisateur</button>
+    </section>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+<script>
+window.DEFAULT_PRODUCTS = [
+  {id:'minerale',name:'Minérales',price:3,cat:'softs',deposit:2,soft:false,note:'Coca · thé froid pêche · limonade · orange · grapefruit · eau · tonic · maté'},
+  {id:'blackpig',name:'Pression Black Pig',price:4,cat:'bieres',deposit:2,soft:false,note:'Blonde de Soif'},
+  {id:'blanche',name:'Pression Blanche Pierre',price:5,cat:'bieres',deposit:2,soft:false,note:'Blanche'},
+  {id:'pichetbp',name:'Pichet Blonde de Soif',price:18,cat:'bieres',deposit:10,soft:false},
+  {id:'pichetbl',name:'Pichet Blanche Pierre',price:23,cat:'bieres',deposit:10,soft:false},
+  {id:'suze',name:'Suze',price:5,cat:'alcools',deposit:2,soft:true},
+  {id:'baby',name:'Baby',price:6,cat:'alcools',deposit:2,soft:true},
+  {id:'whisky',name:'Whisky',price:7,cat:'alcools',deposit:2,soft:true},
+  {id:'jager',name:'Jäger',price:7,cat:'alcools',deposit:2,soft:true},
+  {id:'gin',name:'Gin',price:7,cat:'alcools',deposit:2,soft:true},
+  {id:'martini',name:'Martini',price:7,cat:'alcools',deposit:2,soft:true},
+  {id:'vodka_blanche',name:'Vodka blanche',price:7,cat:'alcools',deposit:2,soft:true},
+  {id:'vodka_verte',name:'Vodka verte',price:7,cat:'alcools',deposit:2,soft:true},
+  {id:'bacardi',name:'Rhum blanc Bacardi',price:7,cat:'alcools',deposit:2,soft:true},
+  {id:'arrosoir',name:'Arrosoir Kamikaze',price:25,cat:'alcools',deposit:10,soft:false},
+  {id:'kamikaze',name:'Verre de Kamikaze',price:5,cat:'alcools',deposit:2,soft:false},
+  {id:'tequila',name:'Tequila',price:5,cat:'shots',deposit:2,soft:false},
+  {id:'zekilla',name:'Zekilla',price:5,cat:'shots',deposit:2,soft:false},
+  {id:'xuxu',name:'Xuxu',price:5,cat:'shots',deposit:2,soft:false},
+  {id:'berliner',name:'Berliner',price:5,cat:'shots',deposit:2,soft:false},
+  {id:'autre_shot',name:'Autre',price:5,cat:'shots',deposit:2,soft:false},
+  {id:'plateau',name:'Plateau de 10 shots',price:40,cat:'shots',deposit:30,soft:false,note:'10 verres + plateau'},
+  {id:'vin',name:'Vin blanc / rosé 1 dl',price:4,cat:'vins',deposit:2,soft:false},
+  {id:'bouteille',name:'Bouteille de vin blanc / rosé 5 dl',price:18,cat:'vins',deposit:0,soft:false}
+];
+</script>
+<script src="app.js"></script>
+</body></html>
