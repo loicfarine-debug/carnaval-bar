@@ -32,3 +32,62 @@ button{touch-action:manipulation;-webkit-user-select:none;user-select:none}.head
   border-color:#3d78a8
 }
 .returns button strong{color:#fff}
+
+
+/* V3.3.2 — densité améliorée, DA V3.2 conservée */
+.products{
+  gap:10px;
+}
+.product{
+  min-height:104px;
+  padding:16px 18px;
+}
+.product b{
+  font-size:20px;
+  line-height:1.08;
+  margin-bottom:12px;
+}
+.product .price{
+  font-size:13px !important;
+  font-weight:750 !important;
+  color:#aeb6c1 !important;
+  letter-spacing:.01em;
+}
+.deposit{
+  font-size:11px !important;
+  padding:4px 8px !important;
+  color:#c4cbd4 !important;
+  opacity:.82;
+}
+
+/* Choix accompagnement : même fenêtre, lecture plus immédiate */
+.mixer-grid{
+  gap:9px !important;
+}
+.mixer-choice{
+  min-height:58px;
+  padding:9px 13px !important;
+  display:flex !important;
+  align-items:center;
+  justify-content:flex-start !important;
+  gap:10px;
+  text-align:left !important;
+}
+.mixer-icon{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  border-radius:50%;
+  background:rgba(255,255,255,.075);
+  display:grid;
+  place-items:center;
+  font-size:18px;
+  line-height:1;
+}
+.mixer-choice > span:last-child{
+  font-size:15px;
+  font-weight:900;
+}
+.mixer-choice.no-soft{
+  opacity:.72;
+}
