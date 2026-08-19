@@ -3,7 +3,21 @@ const $$ = s => [...document.querySelectorAll(s)];
 const cats = [['softs','Softs'],['bieres','Bières'],['alcools','Alcools'],['shots','Shots'],['vins','Vins']];
 let products = structuredClone(window.DEFAULT_PRODUCTS), cat='softs', items=[], returns={glass:0,large:0}, pending=null, actions=[];
 const tapBursts=new Map();
-const mixerList=()=>products.filter(p=>p.cat==='softs').map(p=>p.name).concat('Sans soft');
+const mixerList=()=>{
+ const available=new Set(products.filter(p=>p.cat==='softs').map(p=>p.name));
+ const preferred=["Coca","Tonic","Jus d’orange","Thé froid pêche","Limonade","Grapefruit","Maté","Eau gazeuse","Eau plate"];
+ return preferred.filter(x=>available.has(x)).concat('Sans soft');
+};
+
+function mixerIcon(name){
+ const icons={
+  "Coca":"🥤","Tonic":"🫧","Jus d’orange":"🍊","Thé froid pêche":"🍑",
+  "Limonade":"🍋","Grapefruit":"🍊","Maté":"🧉","Eau gazeuse":"🫧",
+  "Eau plate":"💧","Sans soft":"🚫"
+ };
+ return icons[name]||"🥤";
+}
+
 function money(n){const v=Math.round((Number(n)||0)*100)/100;return (Number.isInteger(v)?String(v):v.toFixed(2).replace(/0+$/,'').replace(/\.$/,''))+' CHF'}
 function total(){return items.reduce((s,x)=>s+x.price+x.deposit,0)-returns.glass*2-returns.large*10}
 function qty(id){return items.filter(x=>x.id===id).length}
@@ -58,7 +72,7 @@ function render(){
  $('#count').textContent=`${items.length} article${items.length!==1?'s':''}`;$('#total').textContent=money(total());$('#retGlassQty').textContent=returns.glass?`×${returns.glass}`:'';$('#retLargeQty').textContent=returns.large?`×${returns.large}`:'';
 }
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){cat=b.dataset.cat;render()}};
-$('#grid').onclick=e=>{const b=e.target.closest('.product');if(!b)return;const p=products.find(x=>x.id===b.dataset.id);if(!p)return;if(p.soft){pending=p;$('#softTitle').textContent=p.name+' · quel soft ?';$('#softs').innerHTML=mixerList().map(s=>`<button data-soft="${s}">${s}</button>`).join('');$('#softDlg').showModal()}else addItem(p,b)};
+$('#grid').onclick=e=>{const b=e.target.closest('.product');if(!b)return;const p=products.find(x=>x.id===b.dataset.id);if(!p)return;if(p.soft){pending=p;$('#softTitle').textContent=p.name+' · quel soft ?';$('#softs').innerHTML=mixerList().map(s=>`<button data-soft="${s}" class="${s==='Sans soft'?'soft-none':''}"><span class="soft-icon">${mixerIcon(s)}</span><span class="soft-label">${s}</span></button>`).join('');$('#softDlg').showModal()}else addItem(p,b)};
 $('#softs').onclick=e=>{const b=e.target.closest('button');if(!b)return;addItem(pending,null,b.dataset.soft);$('#softDlg').close()};
 function addItem(p,button=null,soft=''){remember();items.push({...p,soft});updateSummary();updateProductQty(p.id);burstFeedback(p,soft)}
 $$('[data-ret]').forEach(b=>b.onclick=()=>{remember();returns[b.dataset.ret]++;render();toastMsg(b.dataset.ret==='glass'?'−2 CHF · verre rendu':'−10 CHF · consigne rendue',650)});
