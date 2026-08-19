@@ -15,8 +15,8 @@
 <div class="app">
   <header>
     <img src="logo.png" alt="Carnaval Guégueleville">
-    <div class="brand"><b>BAR CARNAVAL</b><small>Guégueleville</small><button id="userBtn" class="user-chip" type="button"></button></div>
-    <div class="header-actions"><button id="historyBtn" class="icon-btn" aria-label="Historique">🕘</button><button id="settings" class="icon-btn" aria-label="Réglages">⚙</button></div>
+    <div class="brand"><b>BAR CARNAVAL</b><small>Guégueleville · <span class="version">v3.2</span></small></div>
+    <div class="header-actions"><button id="undoBtn" class="icon-btn" aria-label="Annuler la dernière action" title="Annuler">↩</button><button id="historyBtn" class="icon-btn" aria-label="Historique">🕘</button></div>
   </header>
 
   <nav id="tabs"></nav>
@@ -34,18 +34,6 @@
     <button id="pay">PAYER</button>
   </footer>
 </div>
-
-<dialog id="loginDlg" class="locked-dialog">
-  <div class="sheet login-sheet">
-    <button id="loginClose" class="login-close" type="button" aria-label="Fermer">×</button>
-    <img src="logo.png" alt="">
-    <h2>Qui tient le bar ?</h2>
-    <p>Le téléphone se souviendra de toi.</p>
-    <label>Prénom</label><input id="firstName" autocomplete="given-name" placeholder="Prénom">
-    <label>Nom</label><input id="lastName" autocomplete="family-name" placeholder="Nom">
-    <button id="loginOk" class="primary">Entrer dans l’app</button>
-  </div>
-</dialog>
 
 <dialog id="softDlg">
   <div class="sheet">
@@ -80,9 +68,8 @@
 
 <dialog id="cartDlg">
   <div class="sheet">
-    <div class="sheet-head"><h2>Commande / préparation</h2><button class="x" data-close="cartDlg">×</button></div>
+    <div class="sheet-head"><h2>COMMANDE À PRÉPARER</h2><button class="x" data-close="cartDlg">×</button></div>
     <div id="lines"></div>
-    <div class="bigTotal"><span>Total</span><b id="cartTotal"></b></div>
     <button class="secondary" data-close="cartDlg">Fermer</button>
   </div>
 </dialog>
@@ -95,58 +82,15 @@
     <div id="cashBox" hidden>
       <label>Le client donne</label>
       <input id="given" inputmode="decimal" placeholder="50">
+      <div class="cash-quick"><button data-given="20">20 CHF</button><button data-given="50">50 CHF</button><button data-given="100">100 CHF</button></div>
       <div id="change"></div>
-      <button id="confirmCash" class="primary">Valider cash</button>
+      <button id="confirmCash" class="primary payment-confirm">✓ VALIDER CASH</button>
     </div>
-    <button id="confirmTwint" class="primary" hidden>Valider TWINT</button>
+    <div id="twintBox" hidden class="twint-box"><div class="twint-symbol">T</div><b>TWINT</b><small>QR de paiement bientôt disponible</small><button id="confirmTwint" class="primary payment-confirm">✓ VALIDER TWINT</button></div>
   </div>
 </dialog>
 
-<dialog id="pinDlg">
-  <div class="sheet">
-    <div class="sheet-head"><h2>Accès comité</h2><button class="x" data-close="pinDlg">×</button></div>
-    <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="Code PIN">
-    <button id="pinOk" class="primary">Ouvrir</button>
-    <small>PIN initial : 2026</small>
-  </div>
-</dialog>
-
-<dialog id="settingsDlg">
-  <div class="sheet settings-sheet">
-    <div class="sheet-head sticky-head"><h2>Comité</h2><button class="x" data-close="settingsDlg">×</button></div>
-    <div class="settings-tabs">
-      <button class="active" data-setting-tab="stats">Statistiques</button>
-      <button data-setting-tab="prices">Prix</button>
-      <button data-setting-tab="access">Accès</button>
-    </div>
-
-    <section id="settingsStats" class="settings-panel active">
-      <div id="statsSummary" class="stats-grid"></div>
-      <h3>Ventes par heure</h3>
-      <div id="hourlyStats" class="stats-list"></div>
-      <h3>Ventes par produit</h3>
-      <div id="productStats" class="stats-list"></div>
-      <h3>Utilisateurs mémorisés sur ce téléphone</h3>
-      <div id="usersStats" class="stats-list"></div>
-      <button id="resetStats" class="danger">Réinitialiser les statistiques</button>
-    </section>
-
-    <section id="settingsPrices" class="settings-panel">
-      <p class="muted">Les changements de prix sont enregistrés sur ce téléphone.</p>
-      <div id="priceEditor"></div>
-      <button id="savePrices" class="primary">Enregistrer les prix</button>
-      <button id="resetPrices" class="secondary">Remettre les prix par défaut</button>
-    </section>
-
-    <section id="settingsAccess" class="settings-panel">
-      <label>Nouveau PIN comité</label>
-      <input id="newPin" inputmode="numeric" maxlength="8">
-      <button id="savePin" class="primary">Enregistrer le PIN</button>
-      <button id="switchUser" class="secondary">Changer d’utilisateur</button>
-    </section>
-  </div>
-</dialog>
-
+<div id="updateBar" class="update-bar" hidden><span>Nouvelle version disponible</span><button id="updateBtn">METTRE À JOUR</button></div>
 <div id="toast"></div>
 <script>
 window.DEFAULT_PRODUCTS = [
@@ -159,10 +103,10 @@ window.DEFAULT_PRODUCTS = [
   {id:'eau_plate',name:'Eau plate',price:3,cat:'softs',deposit:2,soft:false},
   {id:'tonic',name:'Tonic',price:3,cat:'softs',deposit:2,soft:false},
   {id:'mate',name:'Maté',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'blackpig',name:'Pression Black Pig',price:4,cat:'bieres',deposit:2,soft:false,note:'Blonde de Soif'},
-  {id:'blanche',name:'Pression Blanche Pierre',price:5,cat:'bieres',deposit:2,soft:false,note:'Blanche'},
-  {id:'pichetbp',name:'Pichet Blonde de Soif',price:18,cat:'bieres',deposit:10,soft:false},
-  {id:'pichetbl',name:'Pichet Blanche Pierre',price:23,cat:'bieres',deposit:10,soft:false},
+  {id:'blackpig',name:'Bière blonde',price:4,cat:'bieres',deposit:2,soft:false},
+  {id:'blanche',name:'Bière blanche',price:5,cat:'bieres',deposit:2,soft:false},
+  {id:'pichetbp',name:'Pichet blonde',price:18,cat:'bieres',deposit:10,soft:false},
+  {id:'pichetbl',name:'Pichet blanche',price:23,cat:'bieres',deposit:10,soft:false},
   {id:'suze',name:'Suze',price:5,cat:'alcools',deposit:2,soft:true},
   {id:'baby',name:'Baby',price:6,cat:'alcools',deposit:2,soft:true},
   {id:'whisky',name:'Whisky',price:7,cat:'alcools',deposit:2,soft:true},
