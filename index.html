@@ -1,132 +1,141 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b0d11">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css">
-  <title>Bar Carnaval</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#111315" />
+  <title>Carnaval Bar</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="app">
-  <header>
-    <img src="logo.png" alt="Carnaval Guégueleville">
-    <div class="brand"><b>BAR CARNAVAL</b><small>Guégueleville · <span class="version">v3.3.1</span></small></div>
-    <div class="header-actions"><button id="undoBtn" class="icon-btn" aria-label="Annuler la dernière action" title="Annuler">↩</button><button id="historyBtn" class="icon-btn" aria-label="Historique">🕘</button></div>
-  </header>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <img src="logo.png" alt="Carnaval" class="logo"/>
+        <div>
+          <div class="title">BAR CARNAVAL</div>
+          <div class="subtitle">Guégueleville</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="historyBtn" class="icon-btn">🕘</button>
+        <button id="updateBtn" class="update-btn hidden">METTRE À JOUR</button>
+      </div>
+    </header>
 
-  <nav id="tabs"></nav>
-  <main id="grid"></main>
+    <div id="versionLabel" class="version">V3.3</div>
 
-  <section class="returns">
-    <b>↩ RETOURS CONSIGNES</b>
-    <button data-ret="glass"><span>Verre</span><strong>−2.–</strong><em id="retGlassQty"></em></button>
-    <button data-ret="large"><span>Plateau · Arrosoir · Pichet</span><strong>−10.–</strong><em id="retLargeQty"></em></button>
-  </section>
+    <nav id="tabs" class="tabs"></nav>
+    <main>
+      <section id="products" class="product-grid"></section>
 
-  <footer>
-    <button id="cart" class="cart-btn"><span id="count">0 article</span><small>Voir la commande</small></button>
-    <div class="footer-total"><small>À ENCAISSER</small><strong id="total">0.–</strong></div>
-    <button id="pay">PAYER</button>
-  </footer>
-</div>
+      <section class="returns">
+        <div class="section-title">RETOURS CONSIGNES</div>
+        <div class="return-grid">
+          <button class="return-btn return-glass" data-return="glass">
+            <span class="return-name">VERRE</span>
+            <span class="return-price">−2 CHF</span>
+            <span class="qty-badge" id="retGlassQty"></span>
+          </button>
+          <button class="return-btn return-big" data-return="big">
+            <span class="return-name">PLATEAU • ARROSOIR • PICHET</span>
+            <span class="return-price">−10 CHF</span>
+            <span class="qty-badge" id="retBigQty"></span>
+          </button>
+        </div>
+      </section>
+    </main>
 
-<dialog id="softDlg">
-  <div class="sheet">
-    <div class="sheet-head"><h2 id="softTitle">Quel soft ?</h2><button class="x" data-close="softDlg">×</button></div>
-    <div id="softs" class="softs"></div>
+    <footer class="checkout">
+      <button id="undoBtn" class="undo-btn" title="Annuler la dernière action">↩︎</button>
+      <button id="orderBtn" class="order-summary">
+        <span id="articleCount">0 article</span>
+        <strong>COMMANDE</strong>
+      </button>
+      <div class="total-box">
+        <span>À ENCAISSER</span>
+        <strong id="totalDue">0 CHF</strong>
+      </div>
+      <button id="payBtn" class="pay-btn">PAYER</button>
+    </footer>
   </div>
-</dialog>
 
-<dialog id="historyDlg">
-  <div class="sheet">
-    <div class="sheet-head"><h2>Historique récent</h2><button class="x" data-close="historyDlg">×</button></div>
-    <p class="muted">Les dernières commandes de ce téléphone.</p>
+  <div id="modalBackdrop" class="backdrop hidden"></div>
+
+  <div id="orderModal" class="modal hidden">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow">PRÉPARATION</div>
+        <h2>COMMANDE À PRÉPARER</h2>
+      </div>
+      <button class="close-btn" data-close="orderModal">✕</button>
+    </div>
+    <div id="orderLines" class="order-lines"></div>
+    <div id="returnLines" class="return-lines"></div>
+  </div>
+
+  <div id="mixerModal" class="modal hidden">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow">ACCOMPAGNEMENT</div>
+        <h2 id="mixerTitle">Choisir le soft</h2>
+      </div>
+      <button class="close-btn" data-close="mixerModal">✕</button>
+    </div>
+    <div id="mixerGrid" class="mixer-grid"></div>
+  </div>
+
+  <div id="payModal" class="modal hidden">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow">PAIEMENT</div>
+        <h2 id="payAmount">0 CHF</h2>
+      </div>
+      <button class="close-btn" data-close="payModal">✕</button>
+    </div>
+    <div class="pay-tabs">
+      <button id="cashTab" class="pay-tab active">CASH</button>
+      <button id="twintTab" class="pay-tab">TWINT</button>
+    </div>
+
+    <div id="cashPanel">
+      <label class="field-label">Le client donne</label>
+      <input id="cashInput" inputmode="decimal" class="cash-input" placeholder="0 CHF" />
+      <div class="quick-cash">
+        <button data-cash="20">20 CHF</button>
+        <button data-cash="50">50 CHF</button>
+        <button data-cash="100">100 CHF</button>
+      </div>
+      <div class="change-box">
+        <span>À RENDRE</span>
+        <strong id="changeDue">0 CHF</strong>
+      </div>
+      <button id="validateCash" class="validate-btn">VALIDER CASH</button>
+    </div>
+
+    <div id="twintPanel" class="hidden">
+      <div class="twint-placeholder">
+        <div class="twint-symbol">TWINT</div>
+        <div class="twint-note">QR du carnaval à ajouter plus tard</div>
+      </div>
+      <button id="validateTwint" class="validate-btn twint-btn">VALIDER TWINT</button>
+    </div>
+  </div>
+
+  <div id="historyModal" class="modal hidden">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow">DERNIÈRES COMMANDES</div>
+        <h2>Historique</h2>
+      </div>
+      <button class="close-btn" data-close="historyModal">✕</button>
+    </div>
     <div id="historyList" class="history-list"></div>
   </div>
-</dialog>
 
-<dialog id="orderDetailDlg">
-  <div class="sheet">
-    <div class="sheet-head"><h2>Détail de la commande</h2><button class="x" data-close="orderDetailDlg">×</button></div>
-    <div id="orderDetail"></div>
-    <button class="secondary" data-close="orderDetailDlg">Fermer</button>
-  </div>
-</dialog>
+  <div id="toast" class="toast hidden"></div>
 
-<dialog id="successDlg" class="success-dialog">
-  <div class="sheet success-sheet">
-    <div class="success-check">✓</div>
-    <h2>Paiement enregistré</h2>
-    <p id="successText">Commande terminée.</p>
-  </div>
-</dialog>
-
-<dialog id="cartDlg">
-  <div class="sheet">
-    <div class="sheet-head"><h2>COMMANDE À PRÉPARER</h2><button class="x" data-close="cartDlg">×</button></div>
-    <div id="lines"></div>
-    <button class="secondary" data-close="cartDlg">Fermer</button>
-  </div>
-</dialog>
-
-<dialog id="payDlg">
-  <div class="sheet">
-    <div class="sheet-head"><h2>Paiement</h2><button class="x" data-close="payDlg">×</button></div>
-    <div class="payTotal" id="payTotal"></div>
-    <div class="paytypes"><button id="cash">💵 Cash</button><button id="twint">📱 TWINT</button></div>
-    <div id="cashBox" hidden>
-      <label>Le client donne</label>
-      <input id="given" inputmode="decimal" placeholder="50">
-      <div class="cash-quick"><button data-given="20">20 CHF</button><button data-given="50">50 CHF</button><button data-given="100">100 CHF</button></div>
-      <div id="change"></div>
-      <button id="confirmCash" class="primary payment-confirm">✓ VALIDER CASH</button>
-    </div>
-    <div id="twintBox" hidden class="twint-box"><div class="twint-symbol">T</div><b>TWINT</b><small>QR de paiement bientôt disponible</small><button id="confirmTwint" class="primary payment-confirm">✓ VALIDER TWINT</button></div>
-  </div>
-</dialog>
-
-<div id="updateBar" class="update-bar" hidden><span>Nouvelle version disponible</span><button id="updateBtn">METTRE À JOUR</button></div>
-<div id="toast"></div>
-<script>
-window.DEFAULT_PRODUCTS = [
-  {id:'coca',name:'Coca',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'the_peche',name:'Thé froid pêche',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'limonade',name:'Limonade',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'jus_orange',name:'Jus d’orange',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'grapefruit',name:'Grapefruit',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'eau_gazeuse',name:'Eau gazeuse',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'eau_plate',name:'Eau plate',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'tonic',name:'Tonic',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'mate',name:'Maté',price:3,cat:'softs',deposit:2,soft:false},
-  {id:'blackpig',name:'Bière blonde',price:4,cat:'bieres',deposit:2,soft:false},
-  {id:'blanche',name:'Bière blanche',price:5,cat:'bieres',deposit:2,soft:false},
-  {id:'pichetbp',name:'Pichet blonde',price:18,cat:'bieres',deposit:10,soft:false},
-  {id:'pichetbl',name:'Pichet blanche',price:23,cat:'bieres',deposit:10,soft:false},
-  {id:'suze',name:'Suze',price:5,cat:'alcools',deposit:2,soft:true},
-  {id:'baby',name:'Baby',price:6,cat:'alcools',deposit:2,soft:true},
-  {id:'whisky',name:'Whisky',price:7,cat:'alcools',deposit:2,soft:true},
-  {id:'jager',name:'Jäger',price:7,cat:'alcools',deposit:2,soft:true},
-  {id:'gin',name:'Gin',price:7,cat:'alcools',deposit:2,soft:true},
-  {id:'martini',name:'Martini',price:7,cat:'alcools',deposit:2,soft:true},
-  {id:'vodka_blanche',name:'Vodka blanche',price:7,cat:'alcools',deposit:2,soft:true},
-  {id:'vodka_verte',name:'Vodka verte',price:7,cat:'alcools',deposit:2,soft:true},
-  {id:'bacardi',name:'Rhum blanc Bacardi',price:7,cat:'alcools',deposit:2,soft:true},
-  {id:'arrosoir',name:'Arrosoir Kamikaze',price:25,cat:'alcools',deposit:10,soft:false},
-  {id:'kamikaze',name:'Verre de Kamikaze',price:5,cat:'alcools',deposit:2,soft:false},
-  {id:'tequila',name:'Tequila',price:5,cat:'shots',deposit:2,soft:false},
-  {id:'zekilla',name:'Zekilla',price:5,cat:'shots',deposit:2,soft:false},
-  {id:'xuxu',name:'Xuxu',price:5,cat:'shots',deposit:2,soft:false},
-  {id:'berliner',name:'Berliner',price:5,cat:'shots',deposit:2,soft:false},
-  {id:'autre_shot',name:'Autre',price:5,cat:'shots',deposit:2,soft:false},
-  {id:'plateau',name:'Plateau de 10 shots',price:40,cat:'shots',deposit:30,soft:false,note:'10 verres + plateau'},
-  {id:'vin',name:'Vin blanc / rosé 1 dl',price:4,cat:'vins',deposit:2,soft:false},
-  {id:'bouteille',name:'Bouteille de vin blanc / rosé 5 dl',price:18,cat:'vins',deposit:0,soft:false}
-]
-</script>
-<script src="app.js"></script>
-</body></html>
+  <script src="app.js"></script>
+</body>
+</html>
