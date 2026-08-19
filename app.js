@@ -1,347 +1,83 @@
 
-const VERSION = "3.3.0";
-const CATEGORY_ORDER = ["soft","beer","alcohol","shot","wine"];
-const CATEGORY_LABELS = {
-  soft:"Softs", beer:"Bières", alcohol:"Alcools", shot:"Shots", wine:"Vins"
-};
-const MIXERS = ["Coca","Thé froid pêche","Limonade","Jus d’orange","Grapefruit","Eau gazeuse","Eau plate","Tonic","Maté","Sans soft"];
+const TAP_MOVE_TOLERANCE = 14;
+function bindSafeTap(el, handler){
+  let sx = 0, sy = 0, moved = false, active = false;
 
-const products = [
-  {id:"coca", name:"Coca", cat:"soft", price:3, deposit:2},
-  {id:"eau_gaz", name:"Eau gazeuse", cat:"soft", price:3, deposit:2},
-  {id:"eau_plate", name:"Eau plate", cat:"soft", price:3, deposit:2},
-  {id:"grapefruit", name:"Grapefruit", cat:"soft", price:3, deposit:2},
-  {id:"jus_orange", name:"Jus d’orange", cat:"soft", price:3, deposit:2},
-  {id:"limonade", name:"Limonade", cat:"soft", price:3, deposit:2},
-  {id:"mate", name:"Maté", cat:"soft", price:3, deposit:2},
-  {id:"the_froid", name:"Thé froid pêche", cat:"soft", price:3, deposit:2},
-  {id:"tonic", name:"Tonic", cat:"soft", price:3, deposit:2},
+  el.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    sx = e.clientX;
+    sy = e.clientY;
+    moved = false;
+    active = true;
+  }, { passive: true });
 
-  {id:"biere_blanche", name:"Bière blanche", cat:"beer", price:5, deposit:2},
-  {id:"biere_blonde", name:"Bière blonde", cat:"beer", price:4, deposit:2},
-  {id:"pichet_blanche", name:"Pichet blanche", cat:"beer", price:23, deposit:10},
-  {id:"pichet_blonde", name:"Pichet blonde", cat:"beer", price:18, deposit:10},
+  el.addEventListener("pointermove", (e) => {
+    if (!active) return;
+    if (Math.hypot(e.clientX - sx, e.clientY - sy) > TAP_MOVE_TOLERANCE) {
+      moved = true;
+    }
+  }, { passive: true });
 
-  {id:"baby", name:"Baby", cat:"alcohol", price:6, deposit:2, mixer:true},
-  {id:"gin", name:"Gin", cat:"alcohol", price:7, deposit:2, mixer:true},
-  {id:"jager", name:"Jäger", cat:"alcohol", price:7, deposit:2, mixer:true},
-  {id:"martini", name:"Martini", cat:"alcohol", price:7, deposit:2, mixer:true},
-  {id:"rhum", name:"Rhum blanc", cat:"alcohol", price:7, deposit:2, mixer:true},
-  {id:"suze", name:"Suze", cat:"alcohol", price:5, deposit:2, mixer:true},
-  {id:"vodka", name:"Vodka", cat:"alcohol", price:7, deposit:2, mixer:true},
-  {id:"whisky", name:"Whisky", cat:"alcohol", price:7, deposit:2, mixer:true},
+  el.addEventListener("pointerup", (e) => {
+    if (!active) return;
+    active = false;
+    if (!moved) handler(e);
+  }, { passive: true });
 
-  {id:"autre", name:"Autre", cat:"shot", price:5, deposit:2},
-  {id:"berliner", name:"Berliner", cat:"shot", price:5, deposit:2},
-  {id:"tequila", name:"Tequila", cat:"shot", price:5, deposit:2},
-  {id:"xuxu", name:"Xuxu", cat:"shot", price:5, deposit:2},
-  {id:"zekilla", name:"Zekilla", cat:"shot", price:5, deposit:2},
-  {id:"plateau10", name:"Plateau 10 shots", cat:"shot", price:40, deposit:30},
-
-  {id:"vin_bouteille", name:"Bouteille 5 dl", cat:"wine", price:18, deposit:0},
-  {id:"vin_verre", name:"Vin 1 dl", cat:"wine", price:4, deposit:2},
-];
-
-let activeCat = "soft";
-let order = [];
-let returns = {glass:0,big:0};
-let history = JSON.parse(localStorage.getItem("carnaval_history_v33") || "[]");
-let actionStack = [];
-let pendingMixerProduct = null;
-let tapBuckets = new Map();
-
+  el.addEventListener("pointercancel", () => {
+    active = false;
+    moved = true;
+  }, { passive: true });
+}
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-
-function money(v){
-  const n = Math.round(v * 100) / 100;
-  return `${Number.isInteger(n) ? n : n.toFixed(2)} CHF`;
+const cats = [['softs','Softs'],['bieres','Bières'],['alcools','Alcools'],['shots','Shots'],['vins','Vins']];
+let products = structuredClone(window.DEFAULT_PRODUCTS), cat='softs', items=[], returns={glass:0,large:0}, pending=null, actions=[];
+const mixerList=()=>products.filter(p=>p.cat==='softs').map(p=>p.name).concat('Sans soft');
+function money(n){const v=Math.round((Number(n)||0)*100)/100;return (Number.isInteger(v)?String(v):v.toFixed(2).replace(/0+$/,'').replace(/\.$/,''))+' CHF'}
+function total(){return items.reduce((s,x)=>s+x.price+x.deposit,0)-returns.glass*2-returns.large*10}
+function qty(id){return items.filter(x=>x.id===id).length}
+function groupItems(){const g={};items.forEach(x=>{const k=x.id+'|'+(x.soft||'');if(!g[k])g[k]={...x,n:0};g[k].n++});return Object.entries(g).map(([key,val])=>({key,...val}))}
+function toastMsg(t,ms=900){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),ms)}
+function snapshot(){return {items:structuredClone(items),returns:{...returns}}}
+function remember(){actions.push(snapshot());if(actions.length>30)actions.shift()}
+function undo(){if(!actions.length){toastMsg('Rien à annuler');return}const s=actions.pop();items=s.items;returns=s.returns;render();toastMsg('Dernière action annulée ↩')}
+function render(){
+ $('#tabs').innerHTML=cats.map(c=>`<button class="${c[0]===cat?'active':''}" data-cat="${c[0]}">${c[1]}</button>`).join('');
+ $('#grid').innerHTML=products.filter(p=>p.cat===cat).map(p=>`<button class="product" data-cat="${p.cat}" data-id="${p.id}"><b>${p.name}</b><div class="price-row"><span class="price">${money(p.price)}</span>${p.deposit?`<span class="deposit-badge">+${money(p.deposit)}</span>`:''}</div>${p.note?`<small>${p.note}</small>`:''}${qty(p.id)?`<span class="qty">×${qty(p.id)}</span>`:''}<span class="tap-plus">+1</span></button>`).join('');
+ $('#count').textContent=`${items.length} article${items.length!==1?'s':''}`;$('#total').textContent=money(total());$('#retGlassQty').textContent=returns.glass?`×${returns.glass}`:'';$('#retLargeQty').textContent=returns.large?`×${returns.large}`:'';
 }
-
-function total(){
-  const items = order.reduce((sum,l)=>sum + (l.price + l.deposit) * l.qty,0);
-  return items - returns.glass*2 - returns.big*10;
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){cat=b.dataset.cat;render()}};
+$('#grid').onclick=e=>{const b=e.target.closest('.product');if(!b)return;const p=products.find(x=>x.id===b.dataset.id);if(!p)return;if(p.soft){pending=p;$('#softTitle').textContent=p.name+' · quel soft ?';$('#softs').innerHTML=mixerList().map(s=>`<button data-soft="${s}">${s}</button>`).join('');$('#softDlg').showModal()}else addItem(p,b)};
+$('#softs').onclick=e=>{const b=e.target.closest('button');if(!b)return;addItem(pending,null,b.dataset.soft);$('#softDlg').close()};
+function addItem(p,button=null,soft=''){remember();items.push({...p,soft});render();const fresh=button||document.querySelector(`[data-id="${p.id}"]`);if(fresh){fresh.classList.remove('just-added');void fresh.offsetWidth;fresh.classList.add('just-added')}toastMsg('+1 '+p.name+(soft?' · '+soft:''),600)}
+$$('[data-ret]').forEach(b=>b.onclick=()=>{remember();returns[b.dataset.ret]++;render();toastMsg(b.dataset.ret==='glass'?'−2 CHF · verre rendu':'−10 CHF · consigne rendue',650)});
+$('#undoBtn').onclick=undo;
+function cartRender(){
+ const groups=groupItems();let html=groups.map(x=>`<div class="prep-line" data-key="${encodeURIComponent(x.key)}"><div class="prep-qty">×${x.n}</div><div class="prep-name"><b>${x.name}</b>${x.soft?`<strong>→ ${x.soft}</strong>`:''}</div><div class="line-actions"><button data-act="minus">−</button><button data-act="plus">+</button><button class="trash" data-act="trash">×</button></div></div>`).join('');
+ if(returns.glass||returns.large)html+=`<div class="prep-return-title">↩ RETOURS CONSIGNES</div>`;
+ if(returns.glass)html+=returnLine('glass','Verres',returns.glass);if(returns.large)html+=returnLine('large','Plateau · arrosoir · pichet',returns.large);
+ if(!groups.length&&!returns.glass&&!returns.large)html='<p class="muted">Commande vide.</p>';$('#lines').innerHTML=html;
 }
-
-function totalArticles(){
-  return order.reduce((s,l)=>s+l.qty,0);
-}
-
-function saveState(){
-  localStorage.setItem("carnaval_current_v33", JSON.stringify({order,returns}));
-}
-function loadState(){
-  try{
-    const st = JSON.parse(localStorage.getItem("carnaval_current_v33")||"null");
-    if(st){order = st.order||[]; returns = st.returns||{glass:0,big:0};}
-  }catch{}
-}
-
-function renderTabs(){
-  $("#tabs").innerHTML = CATEGORY_ORDER.map(cat =>
-    `<button class="tab ${cat} ${cat===activeCat?'active':''}" data-cat="${cat}">${CATEGORY_LABELS[cat]}</button>`
-  ).join("");
-  $$(".tab").forEach(b=>b.onclick=()=>{activeCat=b.dataset.cat; renderTabs(); renderProducts();});
-}
-
-function lineKey(p,mixer){ return `${p.id}::${mixer||""}`; }
-
-function getQtyForProduct(p){
-  return order.filter(l=>l.productId===p.id).reduce((s,l)=>s+l.qty,0);
-}
-
-function renderProducts(){
-  const list = products.filter(p=>p.cat===activeCat).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
-  $("#products").innerHTML = list.map(p=>{
-    const qty = getQtyForProduct(p);
-    return `<button class="product ${p.cat}" data-id="${p.id}">
-      <div class="product-name">${p.name}</div>
-      <div class="product-price-row">
-        <span class="product-price">${money(p.price)}</span>
-        ${p.deposit ? `<span class="deposit-badge">+${p.deposit}</span>` : ""}
-      </div>
-      ${qty?`<span class="qty-badge">×${qty}</span>`:""}
-      <span class="plus-feedback"></span>
-    </button>`
-  }).join("");
-  $$(".product").forEach(btn=>{
-    btn.addEventListener("pointerdown", e=>{
-      e.preventDefault();
-      const p = products.find(x=>x.id===btn.dataset.id);
-      btn.classList.remove("tap-pop"); void btn.offsetWidth; btn.classList.add("tap-pop");
-      if(p.mixer){ openMixer(p); }
-      else { addItem(p, null, btn); }
-    }, {passive:false});
-  });
-}
-
-function registerFeedback(btn, productId){
-  const now = Date.now();
-  let b = tapBuckets.get(productId) || {count:0,timer:null,last:0};
-  b.count += 1; b.last = now;
-  clearTimeout(b.timer);
-  const el = btn?.querySelector(".plus-feedback");
-  if(el){
-    el.textContent = `+${b.count}`;
-    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
-  }
-  b.timer = setTimeout(()=>tapBuckets.delete(productId), 520);
-  tapBuckets.set(productId,b);
-}
-
-function addItem(p,mixer=null,btn=null){
-  const key = lineKey(p,mixer);
-  let line = order.find(l=>l.key===key);
-  if(line) line.qty++;
-  else order.push({key,productId:p.id,baseName:p.name,name:mixer&&mixer!=="Sans soft"?`${p.name} ${mixer}`:p.name,mixer,cat:p.cat,price:p.price,deposit:p.deposit,qty:1});
-  actionStack.push({type:"add",key});
-  registerFeedback(btn || document.querySelector(`[data-id="${p.id}"]`), p.id);
-  updateUI();
-}
-
-function removeOne(key){
-  const line = order.find(l=>l.key===key); if(!line) return;
-  line.qty--; if(line.qty<=0) order = order.filter(l=>l.key!==key);
-  updateUI();
-}
-function addOne(key){
-  const line = order.find(l=>l.key===key); if(!line) return;
-  line.qty++;
-  updateUI();
-}
-function deleteLine(key){
-  order = order.filter(l=>l.key!==key); updateUI();
-}
-
-function changeReturn(type,delta){
-  returns[type] = Math.max(0,(returns[type]||0)+delta);
-  if(delta>0) actionStack.push({type:"return",returnType:type});
-  updateUI();
-}
-
-function undo(){
-  const a = actionStack.pop(); if(!a) return;
-  if(a.type==="add") removeOne(a.key);
-  if(a.type==="return") {returns[a.returnType]=Math.max(0,returns[a.returnType]-1); updateUI();}
-}
-
-function updateUI(){
-  $("#totalDue").textContent = money(total());
-  const n = totalArticles();
-  $("#articleCount").textContent = `${n} article${n!==1?'s':''}`;
-  $("#retGlassQty").textContent = returns.glass?`×${returns.glass}`:"";
-  $("#retBigQty").textContent = returns.big?`×${returns.big}`:"";
-  saveState();
-  renderProducts();
-}
-
-function openModal(id){
-  $("#modalBackdrop").classList.remove("hidden");
-  $("#"+id).classList.remove("hidden");
-}
-function closeModal(id){
-  $("#"+id).classList.add("hidden");
-  if($$(".modal:not(.hidden)").length===0) $("#modalBackdrop").classList.add("hidden");
-}
-$$("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
-$("#modalBackdrop").onclick=()=>{$$(".modal:not(.hidden)").forEach(m=>m.classList.add("hidden"));$("#modalBackdrop").classList.add("hidden")};
-
-function openMixer(p){
-  pendingMixerProduct = p;
-  $("#mixerTitle").textContent = p.name;
-  $("#mixerGrid").innerHTML = MIXERS.map(m=>`<button data-mixer="${m}">${m}</button>`).join("");
-  $$("#mixerGrid button").forEach(b=>b.onclick=()=>{
-    closeModal("mixerModal");
-    addItem(p,b.dataset.mixer,document.querySelector(`[data-id="${p.id}"]`));
-  });
-  openModal("mixerModal");
-}
-
-function groupedOrder(){
-  const groups = {};
-  CATEGORY_ORDER.forEach(c=>groups[c]=[]);
-  order.forEach(l=>groups[l.cat].push(l));
-  CATEGORY_ORDER.forEach(c=>groups[c].sort((a,b)=>{
-    const base = a.baseName.localeCompare(b.baseName,'fr');
-    if(base!==0) return base;
-    return (a.mixer||"").localeCompare(b.mixer||"",'fr');
-  }));
-  return groups;
-}
-
-function renderOrderModal(){
-  const groups = groupedOrder();
-  $("#orderLines").innerHTML = CATEGORY_ORDER.map(cat=>{
-    if(!groups[cat].length) return "";
-    return `<div class="prep-group">
-      <div class="prep-cat">${CATEGORY_LABELS[cat].toUpperCase()}</div>
-      ${groups[cat].map(l=>`<div class="order-line">
-        <div class="order-main">
-          <div class="order-qty">×${l.qty}</div>
-          <div class="order-name">${l.name}</div>
-        </div>
-        <div class="line-actions">
-          <button data-minus="${l.key}">−</button>
-          <button data-plus="${l.key}">+</button>
-          <button data-del="${l.key}">🗑</button>
-        </div>
-      </div>`).join("")}
-    </div>`
-  }).join("") || `<div class="history-meta">Aucun article.</div>`;
-
-  let r = "";
-  if(returns.glass || returns.big){
-    r += `<div class="prep-cat">RETOURS CONSIGNES</div>`;
-    if(returns.glass) r += `<div class="return-line"><strong>Verre ×${returns.glass}</strong><div class="line-actions"><button data-rminus="glass">−</button><button data-rplus="glass">+</button><button data-rdel="glass">🗑</button></div></div>`;
-    if(returns.big) r += `<div class="return-line"><strong>Plateau • arrosoir • pichet ×${returns.big}</strong><div class="line-actions"><button data-rminus="big">−</button><button data-rplus="big">+</button><button data-rdel="big">🗑</button></div></div>`;
-  }
-  $("#returnLines").innerHTML = r;
-  $$("[data-minus]").forEach(b=>b.onclick=()=>{removeOne(b.dataset.minus);renderOrderModal()});
-  $$("[data-plus]").forEach(b=>b.onclick=()=>{addOne(b.dataset.plus);renderOrderModal()});
-  $$("[data-del]").forEach(b=>b.onclick=()=>{deleteLine(b.dataset.del);renderOrderModal()});
-  $$("[data-rminus]").forEach(b=>b.onclick=()=>{changeReturn(b.dataset.rminus,-1);renderOrderModal()});
-  $$("[data-rplus]").forEach(b=>b.onclick=()=>{changeReturn(b.dataset.rplus,1);renderOrderModal()});
-  $$("[data-rdel]").forEach(b=>b.onclick=()=>{returns[b.dataset.rdel]=0;updateUI();renderOrderModal()});
-}
-
-$("#orderBtn").onclick=()=>{renderOrderModal();openModal("orderModal")};
-$("#undoBtn").onclick=undo;
-$$(".return-btn").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();changeReturn(b.dataset.return,1)},{passive:false}));
-
-function updateChange(){
-  const given = parseFloat(($("#cashInput").value||"").replace(",", ".")) || 0;
-  const change = Math.max(0,given-total());
-  $("#changeDue").textContent = money(change);
-}
-$("#cashInput").addEventListener("input",updateChange);
-
-$$("[data-cash]").forEach(b=>b.onclick=()=>{
-  const add = Number(b.dataset.cash);
-  const current = parseFloat(($("#cashInput").value||"").replace(",", ".")) || 0;
-  $("#cashInput").value = current + add;
-  updateChange();
-});
-
-$("#payBtn").onclick=()=>{
-  $("#payAmount").textContent = money(total());
-  $("#cashInput").value="";
-  $("#changeDue").textContent="0 CHF";
-  showPayPanel("cash");
-  openModal("payModal");
-  setTimeout(()=>$("#cashInput").focus(),200);
-};
-function showPayPanel(type){
-  const cash = type==="cash";
-  $("#cashTab").classList.toggle("active",cash);
-  $("#twintTab").classList.toggle("active",!cash);
-  $("#cashPanel").classList.toggle("hidden",!cash);
-  $("#twintPanel").classList.toggle("hidden",cash);
-}
-$("#cashTab").onclick=()=>showPayPanel("cash");
-$("#twintTab").onclick=()=>showPayPanel("twint");
-
-function finalizePayment(method){
-  const snapshot = {
-    at:new Date().toISOString(),
-    method,
-    total:total(),
-    order:JSON.parse(JSON.stringify(order)),
-    returns:{...returns}
-  };
-  history.unshift(snapshot);
-  history = history.slice(0,30);
-  localStorage.setItem("carnaval_history_v33",JSON.stringify(history));
-  closeModal("payModal");
-  showToast(`✓ PAYÉ · ${money(snapshot.total)} · ${method}`);
-  order=[]; returns={glass:0,big:0}; actionStack=[]; updateUI();
-}
-$("#validateCash").onclick=()=>finalizePayment("CASH");
-$("#validateTwint").onclick=()=>finalizePayment("TWINT");
-
-function showToast(msg){
-  const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden");
-  clearTimeout(showToast.timer);
-  showToast.timer=setTimeout(()=>t.classList.add("hidden"),1300);
-}
-
-function renderHistory(){
-  if(!history.length){$("#historyList").innerHTML='<div class="history-meta">Aucune commande enregistrée.</div>';return;}
-  $("#historyList").innerHTML=history.map(h=>{
-    const d=new Date(h.at);
-    const time=d.toLocaleTimeString("fr-CH",{hour:"2-digit",minute:"2-digit"});
-    const detail=h.order.map(l=>`${l.qty}× ${l.name}`).join("\n");
-    return `<div class="history-item">
-      <div class="history-head"><span>${time} · ${h.method}</span><span>${money(h.total)}</span></div>
-      <div class="history-detail">${detail || "Retours consignes uniquement"}</div>
-    </div>`;
-  }).join("");
-}
-$("#historyBtn").onclick=()=>{renderHistory();openModal("historyModal")};
-
-let newWorker = null;
-if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js").then(reg=>{
-    if(reg.waiting){ newWorker=reg.waiting; $("#updateBtn").classList.remove("hidden"); }
-    reg.addEventListener("updatefound",()=>{
-      const w=reg.installing;
-      w.addEventListener("statechange",()=>{
-        if(w.state==="installed" && navigator.serviceWorker.controller){
-          newWorker=w; $("#updateBtn").classList.remove("hidden");
-        }
-      });
-    });
-  });
-  navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload());
-}
-$("#updateBtn").onclick=()=>{
-  if(totalArticles()>0 || returns.glass || returns.big){
-    showToast("Termine la commande avant la mise à jour");
-    return;
-  }
-  if(newWorker) newWorker.postMessage({type:"SKIP_WAITING"});
-  else location.reload();
-};
-
-loadState();
-renderTabs();
-updateUI();
+function returnLine(type,label,n){return `<div class="prep-line prep-return" data-return="${type}"><div class="prep-qty">×${n}</div><div class="prep-name"><b>${label}</b></div><div class="line-actions"><button data-retact="minus">−</button><button data-retact="plus">+</button><button class="trash" data-retact="trash">×</button></div></div>`}
+$('#cart').onclick=()=>{cartRender();$('#cartDlg').showModal()};
+$('#lines').onclick=e=>{const rb=e.target.closest('button[data-retact]');if(rb){remember();const type=rb.closest('[data-return]').dataset.return;if(rb.dataset.retact==='plus')returns[type]++;if(rb.dataset.retact==='minus')returns[type]=Math.max(0,returns[type]-1);if(rb.dataset.retact==='trash')returns[type]=0;render();cartRender();return}const btn=e.target.closest('button[data-act]');if(!btn)return;const key=decodeURIComponent(btn.closest('[data-key]').dataset.key),g=groupItems().find(x=>x.key===key);if(!g)return;remember();if(btn.dataset.act==='plus'){const p=products.find(x=>x.id===g.id);items.push({...p,soft:g.soft||''})}if(btn.dataset.act==='minus'){const idx=items.findLastIndex(x=>x.id===g.id&&(x.soft||'')===(g.soft||''));if(idx>=0)items.splice(idx,1)}if(btn.dataset.act==='trash')items=items.filter(x=>!(x.id===g.id&&(x.soft||'')===(g.soft||'')));render();cartRender()};
+$('#pay').onclick=()=>{$('#payTotal').innerHTML=`<span>À ENCAISSER</span><b>${money(total())}</b>`;$('#cashBox').hidden=true;$('#twintBox').hidden=true;$('#given').value='';$('#change').textContent='';$('#payDlg').showModal()};
+$('#cash').onclick=()=>{$('#cashBox').hidden=false;$('#twintBox').hidden=true;setTimeout(()=>$('#given').focus(),80)};
+$('#twint').onclick=()=>{$('#cashBox').hidden=true;$('#twintBox').hidden=false};
+$$('[data-given]').forEach(b=>b.onclick=()=>{$('#given').value=b.dataset.given;calcChange()});
+function calcChange(){const g=parseFloat($('#given').value.replace(',','.'));$('#change').textContent=isNaN(g)?'':g>=total()?`À RENDRE : ${money(g-total())}`:`IL MANQUE : ${money(total()-g)}`}
+$('#given').oninput=calcChange;
+function orders(){return JSON.parse(localStorage.getItem('cg_orders_v3')||'[]')}
+function finish(type){if(!items.length&&!returns.glass&&!returns.large){toastMsg('Commande vide');return}const os=orders(),order={date:new Date().toISOString(),type,total:total(),items:items.map(x=>({id:x.id,name:x.name,cat:x.cat,soft:x.soft||'',price:x.price,deposit:x.deposit})),returns:{...returns}};os.push(order);localStorage.setItem('cg_orders_v3',JSON.stringify(os));items=[];returns={glass:0,large:0};actions=[];$('#payDlg').close();render();$('#successText').textContent=`${money(order.total)} · ${type}`;$('#successDlg').showModal();setTimeout(()=>{if($('#successDlg').open)$('#successDlg').close()},1200)}
+$('#confirmCash').onclick=()=>finish('CASH');$('#confirmTwint').onclick=()=>finish('TWINT');
+$$('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).close());
+function renderHistory(){const all=orders(),os=all.slice().reverse().slice(0,20);$('#historyList').innerHTML=os.length?os.map((o,i)=>{const d=new Date(o.date),time=d.toLocaleString('fr-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});return `<button class="history-card" data-order-index="${all.length-1-i}"><span><b>${time}</b><small>${o.type} · ${o.items.length} article(s)</small></span><strong>${money(o.total)}</strong></button>`}).join(''):'<p class="muted">Aucune commande enregistrée.</p>'}
+$('#historyBtn').onclick=()=>{renderHistory();$('#historyDlg').showModal()};
+$('#historyList').onclick=e=>{const b=e.target.closest('[data-order-index]');if(!b)return;const o=orders()[Number(b.dataset.orderIndex)];if(!o)return;const lines={};o.items.forEach(i=>{const k=i.name+'|'+(i.soft||'');if(!lines[k])lines[k]={...i,n:0};lines[k].n++});let html=`<div class="order-meta"><b>${new Date(o.date).toLocaleString('fr-CH')}</b><span>${o.type} · ${money(o.total)}</span></div>`;html+=Object.values(lines).map(i=>`<div class="detail-row"><span>${i.n}× ${i.name}${i.soft?' → '+i.soft:''}</span><b>${money(i.n*(i.price+i.deposit))}</b></div>`).join('');if(o.returns?.glass)html+=`<div class="detail-row"><span>Retour verres ×${o.returns.glass}</span><b>−${money(o.returns.glass*2)}</b></div>`;if(o.returns?.large)html+=`<div class="detail-row"><span>Retour grands formats ×${o.returns.large}</span><b>−${money(o.returns.large*10)}</b></div>`;$('#orderDetail').innerHTML=html;$('#orderDetailDlg').showModal()};
+// Evite le zoom iOS lors des taps rapides.
+let lastTouchEnd=0;document.addEventListener('touchend',e=>{if(!e.target.closest('button'))return;const now=Date.now();if(now-lastTouchEnd<=300)e.preventDefault();lastTouchEnd=now},{passive:false});
+// Mise à jour PWA contrôlée : jamais de recharge forcée en pleine commande.
+let swReg=null;function offerUpdate(reg){swReg=reg;$('#updateBar').hidden=false}if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').then(reg=>{swReg=reg;if(reg.waiting)offerUpdate(reg);reg.addEventListener('updatefound',()=>{const nw=reg.installing;nw?.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)offerUpdate(reg)})});setInterval(()=>reg.update(),5*60*1000)});navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload())}
+$('#updateBtn').onclick=()=>{if(items.length||returns.glass||returns.large){toastMsg('Termine la commande avant la mise à jour',1800);return}if(swReg?.waiting){$('#updateBtn').textContent='MISE À JOUR…';swReg.waiting.postMessage({type:'SKIP_WAITING'})}else location.reload()};
+render();
