@@ -3,3 +3,32 @@ button{touch-action:manipulation;-webkit-user-select:none;user-select:none}.head
 
 /* V3.2 */
 .version{opacity:.7;font-weight:700}.update-bar{position:fixed;z-index:40;left:12px;right:12px;top:calc(72px + env(safe-area-inset-top));max-width:736px;margin:auto;background:#171c23;border:1px solid #eafc35;border-radius:14px;padding:9px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 10px 30px #0008}.update-bar[hidden]{display:none}.update-bar span{font-size:13px;font-weight:800}.update-bar button{border:0;border-radius:10px;padding:10px 12px;background:#eafc35;color:#111;font-weight:950}.returns{grid-template-columns:1fr 1.55fr;border-color:#3d4550;padding:13px}.returns button{min-height:78px;background:linear-gradient(180deg,#252b35,#1b2028);border:1px solid #4b5563;box-shadow:0 5px 14px #0005}.returns button span{font-weight:900;font-size:14px}.returns button strong{font-size:25px;color:#eafc35;margin-top:6px}.returns button:first-of-type{border-color:#556528}.returns button:last-of-type{border-color:#6a4d28}.product .price{font-size:24px}.deposit-badge{background:#303641;color:#fff;border:1px solid #49515d;padding:5px 8px}.tap-plus{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.5);font-size:34px;font-weight:1000;color:#eafc35;opacity:0;pointer-events:none;text-shadow:0 2px 12px #000}.product.just-added{animation:tapcard .28s ease}.product.just-added .tap-plus{animation:plusone .42s ease}@keyframes tapcard{50%{border-color:#eafc35;box-shadow:0 0 0 2px #eafc3540 inset}}@keyframes plusone{0%{opacity:0;transform:translate(-50%,-40%) scale(.5)}35%{opacity:1;transform:translate(-50%,-55%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(1.15)}}.qty{width:auto;min-width:38px;padding:0 7px;border-radius:999px}.prep-line{display:grid;grid-template-columns:58px 1fr auto;gap:11px;align-items:center;padding:13px 0;border-bottom:1px solid #30343d}.prep-qty{font-size:29px;font-weight:1000;color:#eafc35;text-align:center}.prep-name b{display:block;font-size:20px;line-height:1.1}.prep-name strong{display:block;margin-top:5px;font-size:17px;color:#74dcff}.prep-return-title{margin:18px 0 2px;padding-top:12px;border-top:2px solid #3a414c;color:#ffcc57;font-weight:950;font-size:13px;letter-spacing:.04em}.prep-return .prep-qty{color:#ffcc57}.prep-return .prep-name b{font-size:17px}.payTotal{align-items:end}.payTotal span{font-size:13px;color:#aab1bb;font-weight:850}.payTotal b{font-size:34px}.cash-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 10px}.cash-quick button{border:1px solid #454d59;border-radius:11px;padding:12px 5px;background:#242a33;color:#fff;font-weight:900}.payment-confirm{min-height:58px!important;font-size:17px!important;border:1px solid #f6ff88!important;box-shadow:0 6px 18px #0006}.twint-box{text-align:center;padding-top:14px}.twint-box[hidden]{display:none}.twint-symbol{width:86px;height:86px;margin:2px auto 9px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,#ff5a9d,#7657ff 55%,#2ed3ff);color:#fff;font-size:52px;font-weight:1000;box-shadow:0 8px 25px #0008}.twint-box>b,.twint-box>small{display:block}.twint-box>b{font-size:24px}.twint-box>small{color:#aeb5bf;margin:4px 0 12px}#change{font-size:25px;color:#eafc35}.success-sheet h2{text-transform:uppercase}.success-sheet p{font-size:23px;font-weight:950;color:#fff}.header-actions #undoBtn{font-size:25px}@media(max-width:420px){.prep-line{grid-template-columns:50px 1fr auto;gap:7px}.prep-qty{font-size:25px}.prep-name b{font-size:18px}.line-actions{gap:3px}.line-actions button{min-width:31px;width:31px}.returns button strong{font-size:22px}}
+
+
+/* V3.3.1 — corrections ciblées sur la base visuelle V3.2 */
+.product b{font-size:20px;font-weight:900;line-height:1.12}
+.product .price{font-size:18px;font-weight:900}
+.prep-cat-title{
+  margin:14px 0 2px;
+  color:#aeb5bf;
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.06em
+}
+.prep-soft{
+  display:inline;
+  color:#74dcff;
+  font-size:inherit;
+  font-weight:850;
+  margin-left:4px
+}
+/* retours consignes: même langage graphique, mais plus lisibles */
+.returns button:first-of-type{
+  background:linear-gradient(180deg,#1e3326,#17281e);
+  border-color:#4a8a5c
+}
+.returns button:last-of-type{
+  background:linear-gradient(180deg,#1b2d3e,#162431);
+  border-color:#3d78a8
+}
+.returns button strong{color:#fff}

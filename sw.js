@@ -1,4 +1,4 @@
-const C='cg-bar-v3-2';
+const C='cg-bar-v3-3-1';
 const ASSETS=['./','index.html','styles.css','app.js','logo.png','icon-192.png','icon-512.png','manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS))));
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k))))])));

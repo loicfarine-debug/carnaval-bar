@@ -2,28 +2,76 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const cats = [['softs','Softs'],['bieres','Bières'],['alcools','Alcools'],['shots','Shots'],['vins','Vins']];
 let products = structuredClone(window.DEFAULT_PRODUCTS), cat='softs', items=[], returns={glass:0,large:0}, pending=null, actions=[];
+const tapBursts=new Map();
 const mixerList=()=>products.filter(p=>p.cat==='softs').map(p=>p.name).concat('Sans soft');
 function money(n){const v=Math.round((Number(n)||0)*100)/100;return (Number.isInteger(v)?String(v):v.toFixed(2).replace(/0+$/,'').replace(/\.$/,''))+' CHF'}
 function total(){return items.reduce((s,x)=>s+x.price+x.deposit,0)-returns.glass*2-returns.large*10}
 function qty(id){return items.filter(x=>x.id===id).length}
-function groupItems(){const g={};items.forEach(x=>{const k=x.id+'|'+(x.soft||'');if(!g[k])g[k]={...x,n:0};g[k].n++});return Object.entries(g).map(([key,val])=>({key,...val}))}
+function groupItems(){
+ const g={};
+ items.forEach(x=>{const k=x.id+'|'+(x.soft||'');if(!g[k])g[k]={...x,n:0};g[k].n++});
+ const catOrder=Object.fromEntries(cats.map((c,i)=>[c[0],i]));
+ return Object.entries(g).map(([key,val])=>({key,...val})).sort((a,b)=>{
+   const ca=(catOrder[a.cat]??999)-(catOrder[b.cat]??999);if(ca)return ca;
+   const na=a.name.localeCompare(b.name,'fr',{sensitivity:'base'});if(na)return na;
+   return (a.soft||'').localeCompare(b.soft||'','fr',{sensitivity:'base'});
+ });
+}
 function toastMsg(t,ms=900){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),ms)}
 function snapshot(){return {items:structuredClone(items),returns:{...returns}}}
 function remember(){actions.push(snapshot());if(actions.length>30)actions.shift()}
 function undo(){if(!actions.length){toastMsg('Rien à annuler');return}const s=actions.pop();items=s.items;returns=s.returns;render();toastMsg('Dernière action annulée ↩')}
+
+function burstFeedback(p,soft=''){
+ const key=p.id+'|'+(soft||''),now=Date.now(),prev=tapBursts.get(key);
+ const state=prev&&now-prev.last<480?prev:{count:0,last:0,timer:null};
+ state.count++;state.last=now;clearTimeout(state.timer);
+ tapBursts.set(key,state);
+ const b=document.querySelector(`[data-id="${p.id}"]`);
+ if(b){
+   const plus=b.querySelector('.tap-plus');
+   if(plus)plus.textContent='+'+state.count;
+   b.classList.remove('just-added');void b.offsetWidth;b.classList.add('just-added');
+ }
+ const label=p.name+(soft?' · '+soft:'');
+ toastMsg('+'+state.count+' '+label,520);
+ state.timer=setTimeout(()=>tapBursts.delete(key),500);
+}
+function updateSummary(){
+ $('#count').textContent=`${items.length} article${items.length!==1?'s':''}`;
+ $('#total').textContent=money(total());
+ $('#retGlassQty').textContent=returns.glass?`×${returns.glass}`:'';
+ $('#retLargeQty').textContent=returns.large?`×${returns.large}`:'';
+}
+function updateProductQty(id){
+ const b=document.querySelector(`[data-id="${id}"]`);if(!b)return;
+ let q=b.querySelector('.qty'),n=qty(id);
+ if(n){
+   if(!q){q=document.createElement('span');q.className='qty';b.appendChild(q)}
+   q.textContent='×'+n;
+ }else if(q)q.remove();
+}
+
 function render(){
  $('#tabs').innerHTML=cats.map(c=>`<button class="${c[0]===cat?'active':''}" data-cat="${c[0]}">${c[1]}</button>`).join('');
- $('#grid').innerHTML=products.filter(p=>p.cat===cat).map(p=>`<button class="product" data-cat="${p.cat}" data-id="${p.id}"><b>${p.name}</b><div class="price-row"><span class="price">${money(p.price)}</span>${p.deposit?`<span class="deposit-badge">+${money(p.deposit)}</span>`:''}</div>${p.note?`<small>${p.note}</small>`:''}${qty(p.id)?`<span class="qty">×${qty(p.id)}</span>`:''}<span class="tap-plus">+1</span></button>`).join('');
+ $('#grid').innerHTML=products.filter(p=>p.cat===cat).sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'})).map(p=>`<button class="product" data-cat="${p.cat}" data-id="${p.id}"><b>${p.name}</b><div class="price-row"><span class="price">${money(p.price)}</span>${p.deposit?`<span class="deposit-badge">+${money(p.deposit)}</span>`:''}</div>${p.note?`<small>${p.note}</small>`:''}${qty(p.id)?`<span class="qty">×${qty(p.id)}</span>`:''}<span class="tap-plus">+1</span></button>`).join('');
  $('#count').textContent=`${items.length} article${items.length!==1?'s':''}`;$('#total').textContent=money(total());$('#retGlassQty').textContent=returns.glass?`×${returns.glass}`:'';$('#retLargeQty').textContent=returns.large?`×${returns.large}`:'';
 }
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){cat=b.dataset.cat;render()}};
 $('#grid').onclick=e=>{const b=e.target.closest('.product');if(!b)return;const p=products.find(x=>x.id===b.dataset.id);if(!p)return;if(p.soft){pending=p;$('#softTitle').textContent=p.name+' · quel soft ?';$('#softs').innerHTML=mixerList().map(s=>`<button data-soft="${s}">${s}</button>`).join('');$('#softDlg').showModal()}else addItem(p,b)};
 $('#softs').onclick=e=>{const b=e.target.closest('button');if(!b)return;addItem(pending,null,b.dataset.soft);$('#softDlg').close()};
-function addItem(p,button=null,soft=''){remember();items.push({...p,soft});render();const fresh=button||document.querySelector(`[data-id="${p.id}"]`);if(fresh){fresh.classList.remove('just-added');void fresh.offsetWidth;fresh.classList.add('just-added')}toastMsg('+1 '+p.name+(soft?' · '+soft:''),600)}
+function addItem(p,button=null,soft=''){remember();items.push({...p,soft});updateSummary();updateProductQty(p.id);burstFeedback(p,soft)}
 $$('[data-ret]').forEach(b=>b.onclick=()=>{remember();returns[b.dataset.ret]++;render();toastMsg(b.dataset.ret==='glass'?'−2 CHF · verre rendu':'−10 CHF · consigne rendue',650)});
 $('#undoBtn').onclick=undo;
 function cartRender(){
- const groups=groupItems();let html=groups.map(x=>`<div class="prep-line" data-key="${encodeURIComponent(x.key)}"><div class="prep-qty">×${x.n}</div><div class="prep-name"><b>${x.name}</b>${x.soft?`<strong>→ ${x.soft}</strong>`:''}</div><div class="line-actions"><button data-act="minus">−</button><button data-act="plus">+</button><button class="trash" data-act="trash">×</button></div></div>`).join('');
+ const groups=groupItems();let lastCat='';
+ let html=groups.map(x=>{
+   const catLabel=cats.find(c=>c[0]===x.cat)?.[1]||x.cat;
+   const catHead=x.cat!==lastCat?`<div class="prep-cat-title">${catLabel.toUpperCase()}</div>`:'';
+   lastCat=x.cat;
+   const fullName=x.soft?`${x.name} <span class="prep-soft">→ ${x.soft}</span>`:x.name;
+   return `${catHead}<div class="prep-line" data-key="${encodeURIComponent(x.key)}"><div class="prep-qty">×${x.n}</div><div class="prep-name"><b>${fullName}</b></div><div class="line-actions"><button data-act="minus">−</button><button data-act="plus">+</button><button class="trash" data-act="trash">×</button></div></div>`;
+ }).join('');
  if(returns.glass||returns.large)html+=`<div class="prep-return-title">↩ RETOURS CONSIGNES</div>`;
  if(returns.glass)html+=returnLine('glass','Verres',returns.glass);if(returns.large)html+=returnLine('large','Plateau · arrosoir · pichet',returns.large);
  if(!groups.length&&!returns.glass&&!returns.large)html='<p class="muted">Commande vide.</p>';$('#lines').innerHTML=html;
@@ -34,7 +82,7 @@ $('#lines').onclick=e=>{const rb=e.target.closest('button[data-retact]');if(rb){
 $('#pay').onclick=()=>{$('#payTotal').innerHTML=`<span>À ENCAISSER</span><b>${money(total())}</b>`;$('#cashBox').hidden=true;$('#twintBox').hidden=true;$('#given').value='';$('#change').textContent='';$('#payDlg').showModal()};
 $('#cash').onclick=()=>{$('#cashBox').hidden=false;$('#twintBox').hidden=true;setTimeout(()=>$('#given').focus(),80)};
 $('#twint').onclick=()=>{$('#cashBox').hidden=true;$('#twintBox').hidden=false};
-$$('[data-given]').forEach(b=>b.onclick=()=>{$('#given').value=b.dataset.given;calcChange()});
+$$('[data-given]').forEach(b=>b.onclick=()=>{const cur=parseFloat(($('#given').value||'').replace(',','.'))||0;$('#given').value=cur+Number(b.dataset.given);calcChange()});
 function calcChange(){const g=parseFloat($('#given').value.replace(',','.'));$('#change').textContent=isNaN(g)?'':g>=total()?`À RENDRE : ${money(g-total())}`:`IL MANQUE : ${money(total()-g)}`}
 $('#given').oninput=calcChange;
 function orders(){return JSON.parse(localStorage.getItem('cg_orders_v3')||'[]')}
