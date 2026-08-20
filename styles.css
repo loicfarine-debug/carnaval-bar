@@ -127,3 +127,104 @@ button{touch-action:manipulation;-webkit-user-select:none;user-select:none}.head
 .softs button.soft-none{
   opacity:.68;
 }
+
+
+/* V3.4 — uniquement ergonomie/densité, DA V3.2 conservée */
+
+/* Header plus compact */
+header{
+  gap:9px;
+  padding:calc(5px + env(safe-area-inset-top)) 12px 6px;
+}
+header img{
+  width:44px;
+  height:44px;
+  border-radius:11px;
+}
+.brand>b{font-size:18px}
+.brand>small{font-size:12px}
+.header-actions .icon-btn{
+  width:39px;
+  height:39px;
+  font-size:18px;
+}
+
+/* Onglets toujours accessibles sous le header compact */
+nav{
+  top:calc(56px + env(safe-area-inset-top));
+  padding:8px 12px;
+}
+nav button{
+  padding:8px 14px;
+}
+
+/* Cartes ~18% plus compactes, nom prioritaire, prix/consigne très discrets */
+.product{
+  min-height:85px !important;
+  padding:11px 14px !important;
+}
+.product b{
+  font-size:19px !important;
+  line-height:1.05 !important;
+  margin-bottom:7px !important;
+}
+.product .price-row{
+  margin-top:7px !important;
+  gap:5px !important;
+}
+.product .price{
+  font-size:11px !important;
+  font-weight:700 !important;
+  color:#9099a5 !important;
+}
+.deposit-badge{
+  font-size:9px !important;
+  font-weight:750 !important;
+  padding:3px 6px !important;
+  color:#b8c0ca !important;
+  opacity:.78;
+}
+.product small{
+  font-size:10px;
+  margin-top:3px;
+}
+
+/* Le scroll vertical reste prioritaire, le swipe horizontal est géré en JS */
+#grid{
+  touch-action:pan-y;
+  overscroll-behavior-x:contain;
+}
+.product{
+  touch-action:pan-y;
+}
+
+/* Petite transition au changement de catégorie par swipe */
+#grid.swipe-in-left{animation:catInLeft .16s ease-out}
+#grid.swipe-in-right{animation:catInRight .16s ease-out}
+@keyframes catInLeft{from{opacity:.6;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
+@keyframes catInRight{from{opacity:.6;transform:translateX(-14px)}to{opacity:1;transform:translateX(0)}}
+
+/* Feedback compteur discret */
+.qty.qty-bump{animation:qtyBump .22s ease-out}
+@keyframes qtyBump{0%{transform:scale(.82)}55%{transform:scale(1.16)}100%{transform:scale(1)}}
+
+/* Paiement verrouillé après validation */
+.payment-confirm:disabled{
+  opacity:.55;
+  pointer-events:none;
+  filter:saturate(.65);
+}
+
+/* Le couple Kamikaze reste visuellement homogène */
+.product[data-id="kamikaze"],
+.product[data-id="arrosoir"]{
+  border-color:#2f6b43;
+}
+
+@media(max-width:420px){
+  header img{width:42px;height:42px}
+  .header-actions .icon-btn{width:37px;height:37px}
+  nav{top:calc(53px + env(safe-area-inset-top))}
+  .product{min-height:82px !important;padding:10px 13px !important}
+  .product b{font-size:18px !important}
+}
