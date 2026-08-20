@@ -269,3 +269,53 @@ main{
 #confirmTwint:active{
   transform:scale(.985);
 }
+
+
+/* V3.4.3 — corrections ciblées */
+
+/* Toute la zone de contenu peut reconnaître le swipe horizontal.
+   Le scroll vertical reste prioritaire. */
+.app{
+  overscroll-behavior-x:contain;
+}
+.returns,
+.returns button{
+  touch-action:pan-y;
+}
+
+/* Validation paiement : vrai bouton arrondi, cohérent avec la DA */
+#confirmCash,
+#confirmTwint{
+  display:block !important;
+  width:100% !important;
+  min-height:56px !important;
+  margin-top:14px !important;
+  padding:15px 18px !important;
+  border:0 !important;
+  border-radius:18px !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  font-size:16px !important;
+  font-weight:950 !important;
+  line-height:1 !important;
+  letter-spacing:.02em !important;
+  box-shadow:0 8px 22px rgba(0,0,0,.22) !important;
+  transition:transform .08s ease,opacity .15s ease !important;
+}
+#confirmCash{
+  background:#eafc35 !important;
+  color:#111 !important;
+}
+#confirmTwint{
+  background:linear-gradient(90deg,#76ead8,#91a9ff 52%,#ff91bb) !important;
+  color:#111 !important;
+}
+#confirmCash:active,
+#confirmTwint:active{
+  transform:scale(.985) !important;
+}
+#confirmCash:disabled,
+#confirmTwint:disabled{
+  opacity:.55 !important;
+  pointer-events:none !important;
+}

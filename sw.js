@@ -1,4 +1,4 @@
-const C='cg-bar-v3-4-2';
+const C='cg-bar-v3-4-3';
 const ASSETS=['./','index.html','styles.css','app.js','logo.png','icon-192.png','icon-512.png','manifest.webmanifest'];
 
 self.addEventListener('install',e=>{

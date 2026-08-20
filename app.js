@@ -165,7 +165,7 @@ $('#tabs').onclick=e=>{
 })();
 $('#softs').onclick=e=>{const b=e.target.closest('button');if(!b)return;hapticTap();addItem(pending,null,b.dataset.soft);$('#softDlg').close()};
 function addItem(p,button=null,soft=''){remember();items.push({...p,soft});updateSummary();updateProductQty(p.id);burstFeedback(p,soft)}
-$$('[data-ret]').forEach(b=>b.onclick=()=>{remember();returns[b.dataset.ret]++;render();toastMsg(b.dataset.ret==='glass'?'−2 CHF · verre rendu':'−10 CHF · consigne rendue',650)});
+
 $('#undoBtn').onclick=undo;
 function cartRender(){
  const groups=groupItems();let lastCat='';
@@ -214,17 +214,23 @@ $('#grid').addEventListener('keydown',e=>{
 });
 
 
-// V3.4.2 — tap sûr sur les retours consignes (tap oui, scroll non)
+
+
+
+
+// V3.4.3 — retours consignes : même logique tactile sûre que les produits
 (()=>{
  const zone=document.querySelector('.returns');
  if(!zone)return;
+
  let sx=0,sy=0,target=null,active=false,pid=null;
  const TAP_MOVE=11;
 
  zone.addEventListener('pointerdown',e=>{
    if(e.pointerType==='mouse'&&e.button!==0)return;
-   sx=e.clientX;sy=e.clientY;target=e.target.closest('[data-return]');
-   active=!!target;pid=e.pointerId;
+   const btn=e.target.closest('button[data-ret]');
+   if(!btn)return;
+   sx=e.clientX;sy=e.clientY;target=btn;active=true;pid=e.pointerId;
  },{passive:true});
 
  zone.addEventListener('pointercancel',()=>{
@@ -234,44 +240,66 @@ $('#grid').addEventListener('keydown',e=>{
  zone.addEventListener('pointerup',e=>{
    if(!active||e.pointerId!==pid)return;
    const dx=Math.abs(e.clientX-sx),dy=Math.abs(e.clientY-sy);
-   active=false;pid=null;
-   if(dx>TAP_MOVE||dy>TAP_MOVE||!target)return;
+   const btn=target;
+   active=false;target=null;pid=null;
+
+   // Si le doigt a bougé, c'était un scroll/swipe: aucune consigne ajoutée.
+   if(dx>TAP_MOVE||dy>TAP_MOVE||!btn)return;
+
+   remember();
+   const type=btn.dataset.ret;
+   returns[type]++;
    hapticTap();
-   changeReturn(target.dataset.return,1);
+   render();
+   toastMsg(type==='glass'?'−2 CHF · verre rendu':'−10 CHF · consigne rendue',650);
  });
 
+ // Évite le click synthétique tactile qui doublerait l'action.
  zone.addEventListener('click',e=>{
-   if(e.target.closest('[data-return]'))e.preventDefault();
+   const btn=e.target.closest('button[data-ret]');
+   if(!btn)return;
+   if(e.detail!==0)e.preventDefault();
  },true);
 })();
 
 
-// V3.4.2 — swipe horizontal sur toute la zone centrale, sans toucher au gestionnaire produit existant
+// V3.4.3 — swipe horizontal dans toute la zone centrale de l'application
 (()=>{
- const main=document.querySelector('main');
- if(!main)return;
+ const zone=document.querySelector('.app');
+ if(!zone)return;
+
  let sx=0,sy=0,active=false,pid=null;
  const SWIPE_MIN=46,SWIPE_RATIO=1.25;
 
- main.addEventListener('pointerdown',e=>{
-   // Si le geste démarre dans la grille produits, le gestionnaire V3.4 s'en charge déjà.
+ zone.addEventListener('pointerdown',e=>{
+   // La grille produits garde son gestionnaire V3.4, déjà optimisé tap/scroll/swipe.
    if(e.target.closest('#grid'))return;
+
+   // On ne transforme jamais le header, les onglets, le footer ou une fenêtre en zone de swipe.
+   if(e.target.closest('header,nav,footer,dialog'))return;
    if(e.pointerType==='mouse'&&e.button!==0)return;
+
    sx=e.clientX;sy=e.clientY;active=true;pid=e.pointerId;
  },{passive:true});
 
- main.addEventListener('pointercancel',()=>{
+ zone.addEventListener('pointercancel',()=>{
    active=false;pid=null;
  },{passive:true});
 
- main.addEventListener('pointerup',e=>{
+ zone.addEventListener('pointerup',e=>{
    if(!active||e.pointerId!==pid)return;
-   const dx=e.clientX-sx,dy=e.clientY-sy,adx=Math.abs(dx),ady=Math.abs(dy);
+
+   const dx=e.clientX-sx,dy=e.clientY-sy;
+   const adx=Math.abs(dx),ady=Math.abs(dy);
    active=false;pid=null;
+
    if(adx<SWIPE_MIN||adx<=ady*SWIPE_RATIO)return;
 
    const i=cats.findIndex(c=>c[0]===cat);
-   const ni=dx<0?Math.min(cats.length-1,i+1):Math.max(0,i-1);
+   const ni=dx<0
+     ? Math.min(cats.length-1,i+1)
+     : Math.max(0,i-1);
+
    if(ni!==i)changeCat(cats[ni][0],dx<0?-1:1);
  });
 })();
