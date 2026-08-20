@@ -105,7 +105,7 @@ function openProduct(p,b){
 function changeCat(next,direction=0){
  if(next===cat)return;
  cat=next;render();
- const grid=$('#grid');
+ const grid=$('#grid'); const gestureZone=document.querySelector('main')||grid;
  grid.classList.remove('swipe-in-left','swipe-in-right');
  void grid.offsetWidth;
  if(direction<0)grid.classList.add('swipe-in-left');
@@ -116,26 +116,51 @@ $('#tabs').onclick=e=>{
  if(b)changeCat(b.dataset.cat,0);
 };
 
+
+(()=>{
+ const zone=document.querySelector('.returns');
+ if(!zone)return;
+ let sx=0,sy=0,active=false,target=null,pid=null;
+ const MOVE=11;
+ zone.addEventListener('pointerdown',e=>{
+   if(e.pointerType==='mouse'&&e.button!==0)return;
+   sx=e.clientX;sy=e.clientY;active=true;pid=e.pointerId;
+   target=e.target.closest('[data-return]');
+ },{passive:true});
+ zone.addEventListener('pointercancel',()=>{active=false;target=null;pid=null},{passive:true});
+ zone.addEventListener('pointerup',e=>{
+   if(!active||e.pointerId!==pid)return;
+   const dx=Math.abs(e.clientX-sx),dy=Math.abs(e.clientY-sy);
+   active=false;pid=null;
+   if(dx>MOVE||dy>MOVE||!target)return;
+   hapticTap();
+   changeReturn(target.dataset.return,1);
+ });
+ zone.addEventListener('click',e=>{
+   if(e.target.closest('[data-return]'))e.preventDefault();
+ },true);
+})();
+
 // Gestion tactile V3.4 : tap rapide, scroll vertical prioritaire, swipe horizontal de catégorie.
 (()=>{
  const grid=$('#grid');
  let startX=0,startY=0,lastX=0,lastY=0,startTime=0,target=null,tracking=false,pointerId=null;
  const TAP_MOVE=11,SWIPE_MIN=46,SWIPE_RATIO=1.25;
 
- grid.addEventListener('pointerdown',e=>{
+ gestureZone.addEventListener('pointerdown',e=>{
    if(e.pointerType==='mouse'&&e.button!==0)return;
    startX=lastX=e.clientX;startY=lastY=e.clientY;startTime=performance.now();
    target=e.target.closest('.product');tracking=true;pointerId=e.pointerId;
  },{passive:true});
 
- grid.addEventListener('pointermove',e=>{
+ gestureZone.addEventListener('pointermove',e=>{
    if(!tracking||e.pointerId!==pointerId)return;
    lastX=e.clientX;lastY=e.clientY;
  },{passive:true});
 
- grid.addEventListener('pointercancel',()=>{tracking=false;target=null;pointerId=null},{passive:true});
+ gestureZone.addEventListener('pointercancel',()=>{tracking=false;target=null;pointerId=null},{passive:true});
 
- grid.addEventListener('pointerup',e=>{
+ gestureZone.addEventListener('pointerup',e=>{
    if(!tracking||e.pointerId!==pointerId)return;
    lastX=e.clientX;lastY=e.clientY;
    const dx=lastX-startX,dy=lastY-startY,adx=Math.abs(dx),ady=Math.abs(dy);
@@ -158,7 +183,7 @@ $('#tabs').onclick=e=>{
  },{passive:true});
 
  // Empêche le click synthétique de doubler l'action sur tactile.
- grid.addEventListener('click',e=>{
+ gestureZone.addEventListener('click',e=>{
    if(e.detail===0 && e.target.closest('.product'))return; // clavier/accessibilité
    e.preventDefault();
  },true);

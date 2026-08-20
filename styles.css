@@ -228,3 +228,22 @@ nav button{
   .product{min-height:82px !important;padding:10px 13px !important}
   .product b{font-size:18px !important}
 }
+
+
+/* V3.4.1 */
+main{touch-action:pan-y;overscroll-behavior-x:contain}
+.returns,.returns button{touch-action:pan-y}
+.pay-validate{
+  width:100%;
+  min-height:52px;
+  border:0 !important;
+  border-radius:16px !important;
+  padding:14px 18px !important;
+  font-size:16px !important;
+  font-weight:950 !important;
+  letter-spacing:.01em;
+  box-shadow:0 8px 22px rgba(0,0,0,.18);
+}
+.cash-validate{background:#f4f6f8 !important;color:#111 !important}
+.twint-validate{background:linear-gradient(90deg,#82f2db,#91a9ff,#ff8fb8) !important;color:#111 !important}
+.pay-validate:active{transform:scale(.985)}

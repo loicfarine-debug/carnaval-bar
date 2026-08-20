@@ -15,7 +15,7 @@
 <div class="app">
   <header>
     <img src="logo.png" alt="Carnaval Guégueleville">
-    <div class="brand"><b>BAR CARNAVAL</b><small>Guégueleville · <span class="version">v3.4</span></small></div>
+    <div class="brand"><b>BAR CARNAVAL</b><small>Guégueleville · <span class="version">v3.4.1</span></small></div>
     <div class="header-actions"><button id="undoBtn" class="icon-btn" aria-label="Annuler la dernière action" title="Annuler">↩</button><button id="historyBtn" class="icon-btn" aria-label="Historique">🕘</button></div>
   </header>
 
@@ -84,9 +84,9 @@
       <input id="given" inputmode="decimal" placeholder="50">
       <div class="cash-quick"><button data-given="20">20 CHF</button><button data-given="50">50 CHF</button><button data-given="100">100 CHF</button></div>
       <div id="change"></div>
-      <button id="confirmCash" class="primary payment-confirm">✓ VALIDER CASH</button>
+      <button id="confirmCash" class="primary payment-confirm payment-confirm pay-validate cash-validate">✓ VALIDER CASH</button>
     </div>
-    <div id="twintBox" hidden class="twint-box"><div class="twint-symbol">T</div><b>TWINT</b><small>QR de paiement bientôt disponible</small><button id="confirmTwint" class="primary payment-confirm">✓ VALIDER TWINT</button></div>
+    <div id="twintBox" hidden class="twint-box"><div class="twint-symbol">T</div><b>TWINT</b><small>QR de paiement bientôt disponible</small><button id="confirmTwint" class="primary payment-confirm payment-confirm pay-validate twint-validate">✓ VALIDER TWINT</button></div>
   </div>
 </dialog>
 
